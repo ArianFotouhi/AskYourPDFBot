@@ -42,3 +42,4 @@ docsearch = Pinecone.from_documents(docs, embeddings, index_name=index_name)
 
 query = "When did edgar alan poe travel to spain?"
 docs = docsearch.similarity_search(query)
+print(docs[0].page_content)
