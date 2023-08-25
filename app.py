@@ -7,16 +7,18 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS 
 from langchain.chains.question_answering import load_qa_chain
 from langchain import HuggingFaceHub
-
+from langchain.chat_models import ChatOpenAI
 import os
+
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = ''
+os.environ["OPENAI_API_KEY"] = ""
 
 def main():
     load_dotenv()
     st.set_page_config(page_title="Ask your PDF")
     st.header("Ask Your PDF")
 
-    pdf = st.file_uploader("Upload your pdf",type="pdf")
+    pdf = st.file_uploader("Please upload your pdf",type="pdf")
 
     if pdf is not None:
         pdf_reader = PdfReader(pdf)
@@ -26,7 +28,7 @@ def main():
 
         # spilit ito chuncks
         text_splitter = CharacterTextSplitter(
-            separator="\n",
+            separator="\n", #new line is used to split the text
             chunk_size=1000,
             chunk_overlap=200,
             length_function=len
@@ -38,12 +40,14 @@ def main():
 
         knowledge_base = FAISS.from_texts(chunks,embeddings)
 
-        user_question = st.text_input("Ask Question about your PDF:")
+        user_question = st.text_input("Ask your questions about your PDF:")
         if user_question:
             docs = knowledge_base.similarity_search(user_question)
-            repo_id = "google/flan-t5-large"
-            llm = HuggingFaceHub(repo_id= repo_id, model_kwargs={"temperature":0.5,
-                                                      "max_length":64})
+        
+            #llm = HuggingFaceHub(repo_id= "google/flan-t5-large", model_kwargs={"temperature":0.5, "max_length":64})
+            
+            llm = ChatOpenAI( openai_api_key= os.getenv("OPENAI_API_KEY"), temperature=0, model_name="gpt-3.5-turbo")
+
             chain = load_qa_chain(llm,chain_type="stuff")
             response = chain.run(input_documents=docs,question=user_question)
 
